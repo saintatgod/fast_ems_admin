@@ -1,11 +1,19 @@
 from fastapi import FastAPI
 import uvicorn
 import typer
+from starlette.staticfiles import StaticFiles
+
 from app.core.config import settings
-from app.core.init_app import lifespan
+from app.core.init_app import lifespan, reset_api_docs
 
 def create_app() -> FastAPI:
     app = FastAPI(**settings.get_backend_attributes, lifespan=lifespan)
+
+    if settings.STATIC_ENABLE:
+        app.mount(settings.STATIC_URL, StaticFiles(directory=settings.STATIC_ROOT), name=settings.STATIC_URL)
+
+    reset_api_docs()
+
     return app
 
 app_shell = typer.Typer()
