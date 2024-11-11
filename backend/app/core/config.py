@@ -16,10 +16,12 @@ class Settings(BaseSettings):
     # API前缀
     API_PREFIX: str = "/api"
 
-    # 是否开启SQL数据库
-    SQL_DB_ENABLE: bool = True
+    # 数据库类型, 可选值: postgresql, sqlite
+    SQL_DB_TYPE: str = "postgresql"
+
     # SQL数据库连接URL
-    SQL_DB_URL: Optional[PostgresDsn] = "postgresql://postgres:postgres@localhost:5432/postgres"
+    SQL_PGSQL_URL: Optional[PostgresDsn] = "postgresql+asyncpg://postgres:postgres@localhost:5432/postgres"
+    SQL_SQLITE_URL: Optional[str] = f"sqlite+aiosqlite:{BASE_DIR}/databases/db.sqlite3"
 
     # 静态文件定义
     STATIC_ENABLE: bool = True
