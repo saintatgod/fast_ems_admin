@@ -5,8 +5,8 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
     AsyncEngine
 )
-from app.core.config import settings
-from app.core.exceptions import CustomException
+from core.config import settings
+from core.exceptions import CustomException
 
 def create_db_connect() -> async_sessionmaker:
     if not settings.SQL_DB_TYPE:

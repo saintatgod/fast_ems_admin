@@ -1,6 +1,6 @@
 import time
 from loguru import logger
-from app.core.config import settings
+from core.config import settings
 
 logger.remove(handler_id=None)
 
