@@ -12,3 +12,6 @@ class CustomException(Exception):
         self.code = code
         self.status_code = status_code
         self.desc = desc
+
+async def CustExceptionHandler(request, exc):
+    pass
