@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     SQL_DB_TYPE: str = "postgresql"
 
     # SQL数据库连接URL
-    SQL_PGSQL_URL: Optional[PostgresDsn] = "postgresql+asyncpg://postgres:postgres@localhost:5432/postgres"
+    SQL_PGSQL_URL: Optional[PostgresDsn] = "postgresql+asyncpg://a7938ec410:935d556abc@127.0.0.1:5432/fast_ems_admin"
     SQL_SQLITE_URL: Optional[str] = f"sqlite+aiosqlite:{BASE_DIR}/databases/db.sqlite3"
 
     # 静态文件定义
