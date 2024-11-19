@@ -2,7 +2,7 @@ import time
 from loguru import logger
 from core.config import settings
 
-logger.remove(handler_id=None)
+# logger.remove(handler_id=None)
 
 # 获取日志路径
 log_path = settings.LOG_PATH
