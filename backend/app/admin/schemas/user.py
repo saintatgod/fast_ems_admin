@@ -37,9 +37,9 @@ class UserListSchema(SchemaBase):
 class UserSearchSchema(SchemaBase):
     current: int = Field(..., description="当前页")
     page_size: int = Field(..., description="每页条数")
-    username: str = Field(..., max_length=64, description="用户名")
-    nickname: str = Field(..., max_length=64, description="昵称")
-    mobile: str = Field(..., max_length=11, description="手机号")
+    username: str = Field(None, max_length=64, description="用户名")
+    nickname: str = Field(None, max_length=64, description="昵称")
+    mobile: str = Field(None, max_length=11, description="手机号")
     is_active: int = Field(default=1, description="是否启用")
     is_superuser: int = Field(default=0, description="是否超级管理员")
     is_staff: int = Field(default=0, description="是否管理员")
