@@ -1,113 +1,56 @@
 from uuid import UUID
 
-from sqlmodel import select, func
-
-from core.databases import create_db_connect
+from sqlmodel import select, func, and_
 from app.admin.models import User
+from core.databases import create_db_connect
 
 class UserRepository:
     def __init__(self):
-        # 创建数据库连接
-        self.session = create_db_connect()
-        # 模型类
+        self.db_session = create_db_connect()
         self.model = User
 
     async def get_user_by_id(self, user_id: UUID) -> dict:
-        # 异步获取用户信息
-        async with self.session() as session:
-            # 查询用户信息
-            result = await session.exec(select(User).where(User.id == user_id)).first()
-            # 返回用户信息
-            return result.dict()
+        result = await self.db_session.execute(select(self.model).where(self.model.id == user_id)).first()
+        return result.dict() if result else {}
 
     async def is_exist_by_username(self, username: str) -> bool:
-        # 异步判断用户名是否存在
-        async with create_db_connect()  as session:
-            # 查询用户信息
-            result = await session.execute(select(User).where(User.username == username))
-            # 获取第一个结果
-            user = result.scalars().first()
-            # 返回是否存在
-            return user is not None
+        result = await self.db_session.scalar(select(func.count(self.model.id)).where(self.model.username == username))
+        return result > 0
 
-    async def create_user(self, user: dict) -> dict:
-        # 异步创建用户
-        async with create_db_connect() as session:
-            # 创建用户对象
-            user_obj = User(**user)
-            # 添加用户对象
-            session.add(user_obj)
-            # 提交事务
-            await session.commit()
-            # 返回用户信息
-            return user_obj.dict()
+    async def create_user(self, user_data: dict) -> dict:
+        user_obj = self.model(**user_data)
+        self.db_session.add(user_obj)
+        await self.db_session.commit()
+        return user_obj.dict()
 
-    async def get_user_list(self, user_search: dict, page:int, page_size:int) -> list:
-        # 查询用户列表
-        query = select(User)
-        # 根据用户名查询
-        if user_search.get('username'):
-            query = query.where(User.username == user_search.get('username'))
-        # 根据昵称查询
-        if user_search.get('nickname'):
-            query = query.where(User.nickname == user_search.get('nickname'))
-        # 根据手机号查询
-        if user_search.get('mobile'):
-            query = query.where(User.mobile == user_search.get('mobile'))
-        # 根据是否激活查询
-        if user_search.get('is_active'):
-            query = query.where(User.is_active == user_search.get('is_active'))
-        # 根据是否是超级用户查询
-        if user_search.get('is_superuser'):
-            query = query.where(User.is_superuser == user_search.get('is_superuser'))
-        # 根据是否是管理员查询
-        if user_search.get('is_staff'):
-            query = query.where(User.is_staff == user_search.get('is_staff'))
-        # 根据性别查询
-        if user_search.get('sex'):
-            query = query.where(User.sex == user_search.get('sex'))
-        # 根据创建时间查询
-        if user_search.get('start_time') and user_search.get('end_time'):
-            query = query.where(User.created_at.between(user_search.get('start_time'), user_search.get('end_time')))
-
-        # 异步获取用户列表
-        async with create_db_connect() as session:
-            # 查询用户列表
-            result = await session.execute(query.limit(page_size).offset((page - 1) * page_size))
-            # 返回用户列表
-            return [item.dict() for item in result.scalars()]
+    async def get_user_list(self, user_search: dict, page: int, page_size: int) -> list:
+        query = select(self.model).where(self._build_query(user_search))
+        result = await self.db_session.execute(query.limit(page_size).offset((page - 1) * page_size))
+        return [item.dict() for item in result.scalars()]
 
     async def get_user_count(self, user_search: dict) -> int:
-        # 查询用户数量
-        query = select(func.count(User.id))
-        # 根据用户名查询
-        if user_search.get('username'):
-            query = query.where(User.username == user_search.get('username'))
-        # 根据昵称查询
-        if user_search.get('nickname'):
-            query = query.where(User.nickname == user_search.get('nickname'))
-        # 根据手机号查询
-        if user_search.get('mobile'):
-            query = query.where(User.mobile == user_search.get('mobile'))
-        # 根据是否激活查询
-        if user_search.get('is_active'):
-            query = query.where(User.is_active == user_search.get('is_active'))
-        # 根据是否是超级用户查询
-        if user_search.get('is_superuser'):
-            query = query.where(User.is_superuser == user_search.get('is_superuser'))
-        # 根据是否是管理员查询
-        if user_search.get('is_staff'):
-            query = query.where(User.is_staff == user_search.get('is_staff'))
-        # 根据性别查询
-        if user_search.get('sex'):
-            query = query.where(User.sex == user_search.get('sex'))
-        # 根据创建时间查询
-        if user_search.get('start_time') and user_search.get('end_time'):
-            query = query.where(User.created_at.between(user_search.get('start_time'), user_search.get('end_time')))
+        query = select(func.count(self.model.id)).where(self._build_query(user_search))
+        result = await self.db_session.scalar(query)
+        return result
 
-        # 异步获取用户数量
-        async with create_db_connect() as session:
-            # 查询用户数量
-            result = await session.execute(query)
-            # 返回用户数量
-            return result.scalar()
+    def _build_query(self, user_search: dict):
+        conditions = []
+
+        if user_search.get('username'):
+            conditions.append(self.model.username == user_search['username'])
+        if user_search.get('nickname'):
+            conditions.append(self.model.nickname == user_search['nickname'])
+        if user_search.get('mobile'):
+            conditions.append(self.model.mobile == user_search['mobile'])
+        if user_search.get('is_active') is not None:
+            conditions.append(self.model.is_active == user_search['is_active'])
+        if user_search.get('is_superuser') is not None:
+            conditions.append(self.model.is_superuser == user_search['is_superuser'])
+        if user_search.get('is_staff') is not None:
+            conditions.append(self.model.is_staff == user_search['is_staff'])
+        if user_search.get('sex') is not None:
+            conditions.append(self.model.sex == user_search['sex'])
+        if user_search.get('start_time') and user_search.get('end_time'):
+            conditions.append(self.model.created_at.between(user_search['start_time'], user_search['end_time']))
+
+        return and_(*conditions) if conditions else None
