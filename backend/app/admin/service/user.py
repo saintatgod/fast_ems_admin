@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 from app.admin.repository.user import UserRepository
-from app.admin.schemas.user import UserCreaterSchema, UserListSchema
+from app.admin.schemas.user import UserCreaterSchema, UserListSchema,UserInfoSchema
 from utils.auth import Auth
 
 class UserService:
     @staticmethod
-    async def create_user(user: UserCreaterSchema):
+    async def create_user(user: UserCreaterSchema)->UserInfoSchema:
         """创建用户"""
         new_user = user.dict()
         new_user['password'] = Auth.hash_password(new_user['password'])
@@ -24,7 +24,8 @@ class UserService:
         if new_user.get('mobile') is None:
             new_user['mobile'] = ''
         user_repo = UserRepository()
-        return await user_repo.create_user(new_user)
+        new_user_info = await user_repo.create_user(new_user)
+        return UserInfoSchema(**new_user_info)
 
     @staticmethod
     async def is_exist_by_username(username: str)->bool:
