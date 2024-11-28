@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import Field
+from sqlmodel import Field
 from uuid import UUID
 from core.schema import SchemaBase
 
@@ -45,3 +45,11 @@ class UserSearchSchema(SchemaBase):
     is_staff: int = Field(default=0, description="是否管理员")
     start_time: datetime = Field(..., description="创建时间-开始")
     end_time: datetime = Field(..., description="创建时间-结束")
+
+class UserLoginSchema(SchemaBase):
+    username: str = Field(..., max_length=64, description="用户名")
+    password: str = Field(..., max_length=255, description="密码")
+
+class UserResetPasswordSchema(SchemaBase):
+    old_password: str = Field(..., max_length=255, description="密码")
+    new_password: str = Field(..., max_length=255, description="新密码")

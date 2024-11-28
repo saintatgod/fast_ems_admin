@@ -11,7 +11,7 @@ def create_app() -> FastAPI:
     app = FastAPI(**settings.get_backend_attributes, lifespan=lifespan)
 
     app.include_router(router)
-    app.add_middleware(EnforceJSONMiddleware)
+    # app.add_middleware(EnforceJSONMiddleware)
 
     if settings.STATIC_ENABLE:
         app.mount(settings.STATIC_URL, StaticFiles(directory=settings.STATIC_ROOT), name=settings.STATIC_URL)

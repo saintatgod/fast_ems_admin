@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlmodel import select, func, and_
+from sqlmodel import select, update, func, and_
 from app.admin.models import User
 from core.databases import create_db_connect
 
@@ -10,8 +10,14 @@ class UserRepository:
         self.model = User
 
     async def get_user_by_id(self, user_id: UUID) -> dict:
-        result = await self.db_session.execute(select(self.model).where(self.model.id == user_id)).first()
-        return result.dict() if result else {}
+        result = await self.db_session.execute(select(self.model).where(self.model.id == user_id))
+        user = result.scalars().first()
+        return user.dict() if user else {}
+
+    async def get_user_by_username(self, username: str) -> dict:
+        result = await self.db_session.execute(select(self.model).where(self.model.username == username))
+        user = result.scalars().first()
+        return user.dict() if user else {}
 
     async def is_exist_by_username(self, username: str) -> bool:
         result = await self.db_session.scalar(select(func.count(self.model.id)).where(self.model.username == username))
@@ -22,6 +28,13 @@ class UserRepository:
         self.db_session.add(user_obj)
         await self.db_session.commit()
         return user_obj.dict()
+
+    async def update_user(self, user_id: UUID, user_data: dict) -> dict:
+        restlt = await self.db_session.execute(update(self.model).where(self.model.id == user_id).values(**user_data))
+        await self.db_session.commit()
+        if restlt.rowcount > 0:
+            return await self.get_user_by_id(user_id)
+        return {}
 
     async def get_user_list(self, user_search: dict, page: int, page_size: int) -> list:
         query = select(self.model).where(self._build_query(user_search))
@@ -53,4 +66,4 @@ class UserRepository:
         if user_search.get('start_time') and user_search.get('end_time'):
             conditions.append(self.model.created_at.between(user_search['start_time'], user_search['end_time']))
 
-        return and_(*conditions) if conditions else None
+        return and_(*conditions) if conditions else True
