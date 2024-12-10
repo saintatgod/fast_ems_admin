@@ -1,5 +1,5 @@
 from sqlmodel import Field, String, Integer, Boolean
-from core.base_model import BaseModel
+from core.model import BaseModel
 
 class User(BaseModel, table=True):
     """用户表"""

@@ -2,12 +2,16 @@
 from uuid import UUID
 from typing import Optional
 from app.admin.repository.user import UserRepository
-from app.admin.schemas.user import UserCreaterSchema, UserListSchema,UserInfoSchema
+from app.admin.schemas.user import(
+    UserCreaterSchema,
+    UserListSchema,
+    UserInfoOutSchema
+)
 from utils.auth import Auth
 
 class UserService:
     @staticmethod
-    async def create_user(user: UserCreaterSchema)->UserInfoSchema:
+    async def create_user(user: UserCreaterSchema)->UserInfoOutSchema:
         """创建用户"""
         new_user = user.dict()
         new_user['password'] = Auth.hash_password(new_user['password'])
@@ -22,7 +26,7 @@ class UserService:
 
         user_repo = UserRepository()
         new_user_info = await user_repo.create_user(new_user)
-        return UserInfoSchema(**new_user_info)
+        return UserInfoOutSchema(**new_user_info).model_dump()
 
     @staticmethod
     async def is_exist_by_username(username: str)->bool:
@@ -31,17 +35,17 @@ class UserService:
         return await user_repo.is_exist_by_username(username)
 
     @staticmethod
-    async def update_user(user_id: UUID, user: UserCreaterSchema)->Optional[UserInfoSchema]:
+    async def update_user(user_id: UUID, user: UserCreaterSchema)->Optional[UserInfoOutSchema]:
         """更新用户"""
         user_repo = UserRepository()
         user_info = await user_repo.get_user_by_id(user_id)
         if not user_info:
             return None
         user_info = await user_repo.update_user(user_id, user.dict())
-        return UserInfoSchema(**user_info)
+        return UserInfoOutSchema(**user_info).model_dump()
 
     @staticmethod
-    async def reset_password(user_id: UUID, old_password: str, new_password)->UserInfoSchema:
+    async def reset_password(user_id: UUID, old_password: str, new_password)->UserInfoOutSchema:
         """重置密码"""
         user_repo = UserRepository()
         user_info = await user_repo.get_user_by_id(user_id)
@@ -51,16 +55,16 @@ class UserService:
             raise Exception('旧密码错误')
         user_info['password'] = Auth.hash_password(new_password)
         user_info = await user_repo.update_user(user_id, user_info)
-        return UserInfoSchema(**user_info)
+        return UserInfoOutSchema(**user_info).model_dump()
 
     @staticmethod
-    async def get_user_by_id(user_id: UUID)->Optional[UserInfoSchema]:
+    async def get_user_by_id(user_id: UUID)->Optional[UserInfoOutSchema]:
         """根据id获取用户"""
         user_repo = UserRepository()
         user_info = await user_repo.get_user_by_id(user_id)
         if not user_info:
             return None
-        return UserInfoSchema(**user_info)
+        return UserInfoOutSchema(**user_info).model_dump()
 
     @staticmethod
     async def user_auth(username:str, password:str):
@@ -71,7 +75,7 @@ class UserService:
             raise Exception('用户不存在')
         if not Auth.verify_password(password, user_info['password']):
             raise Exception('密码错误')
-        return user_info
+        return UserInfoOutSchema(**user_info).model_dump()
 
 
     @staticmethod
@@ -81,6 +85,8 @@ class UserService:
         page_size = max(user_search.get('page_size', 10), 1)
 
         user_repo = UserRepository()
-        list_data = await user_repo.get_user_list(user_search, page, page_size)
         total = await user_repo.get_user_count(user_search)
-        return UserListSchema(total=total, data=list_data, current=page, page_size=page_size)
+        if total == 0:
+            return UserListSchema(total=total, list_data=[], current=page, page_size=page_size).model_dump()
+        list_data = await user_repo.get_user_list(user_search, page, page_size)
+        return UserListSchema(total=total, list_data=list_data, current=page, page_size=page_size).model_dump()

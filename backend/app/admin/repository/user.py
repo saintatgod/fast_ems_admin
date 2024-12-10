@@ -39,7 +39,8 @@ class UserRepository:
     async def get_user_list(self, user_search: dict, page: int, page_size: int) -> list:
         query = select(self.model).where(self._build_query(user_search))
         result = await self.db_session.execute(query.limit(page_size).offset((page - 1) * page_size))
-        return [item.dict() for item in result.scalars()]
+        return [user.dict() for user in result.scalars()]
+        
 
     async def get_user_count(self, user_search: dict) -> int:
         query = select(func.count(self.model.id)).where(self._build_query(user_search))
@@ -63,7 +64,7 @@ class UserRepository:
             conditions.append(self.model.is_staff == user_search['is_staff'])
         if user_search.get('sex') is not None:
             conditions.append(self.model.sex == user_search['sex'])
-        if user_search.get('start_time') and user_search.get('end_time'):
-            conditions.append(self.model.created_at.between(user_search['start_time'], user_search['end_time']))
+        if user_search.get('begin_time') and user_search.get('end_time'):
+            conditions.append(self.model.created_at.between(user_search['begin_time'], user_search['end_time']))
 
         return and_(*conditions) if conditions else True
